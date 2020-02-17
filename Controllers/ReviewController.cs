@@ -10,9 +10,11 @@ namespace BooksCatalogue.Controllers
 {
     public class ReviewController : Controller
     {
-        private string apiEndpoint = "https://catalogroby-api.azurewebsites.net/api/";
-
-        public ReviewController() {
+        private string apiEndpoint = "https://localhost:8000/api/";
+        HttpClientHandler clientHandler = new HttpClientHandler();
+        public ReviewController()
+        {
+            clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
         }
 
         // GET: Review/AddReview/2
@@ -23,7 +25,7 @@ namespace BooksCatalogue.Controllers
                 return NotFound();
             }
 
-            HttpClient client = new HttpClient();
+            HttpClient client = new HttpClient(clientHandler);
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, apiEndpoint + "books/" + bookId);
 
             HttpResponseMessage response = await client.SendAsync(request);
