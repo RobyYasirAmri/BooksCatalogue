@@ -12,9 +12,11 @@ namespace BooksCatalogue.Controllers
     {
         private string apiEndpoint = "https://localhost:8000/api/";
         HttpClientHandler clientHandler = new HttpClientHandler();
+        private readonly HttpClient _client;
         public ReviewController()
         {
             clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+            _client = new HttpClient(clientHandler);
         }
 
         // GET: Review/AddReview/2
@@ -28,7 +30,7 @@ namespace BooksCatalogue.Controllers
             HttpClient client = new HttpClient(clientHandler);
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, apiEndpoint + "books/" + bookId);
 
-            HttpResponseMessage response = await client.SendAsync(request);
+            HttpResponseMessage response = await _client.SendAsync(request);
 
             switch(response.StatusCode)
             {
@@ -37,7 +39,7 @@ namespace BooksCatalogue.Controllers
                     var book = JsonSerializer.Deserialize<Book>(responseString);
 
                     ViewData["BookId"] = bookId;
-                    return View("Add");
+                    return View("AddReview");
                 case HttpStatusCode.NotFound:
                     return NotFound();
                 default:
@@ -49,10 +51,28 @@ namespace BooksCatalogue.Controllers
         // POST: Review/AddReview
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddReview([Bind("Id,BookId,ReviewerName,Rating,Comment")] Review review)
+        public async Task<IActionResult> AddReview([Bind("Id,BookId,ReviewerName,Rating,Comment")] [FromForm] Review review)
         {
+            MultipartFormDataContent content = new MultipartFormDataContent();
 
-            return View(review);
+            content.Add(new StringContent(review.BookId.ToString()), "bookId");
+            content.Add(new StringContent(review.ReviewerName), "reviewerName");
+            content.Add(new StringContent(review.Rating.ToString()), "rating");
+            content.Add(new StringContent(review.Comment), "comment");
+
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, apiEndpoint);
+            request.Content = content;
+            HttpResponseMessage response = await _client.SendAsync(request);
+
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.OK:
+                case HttpStatusCode.NoContent:
+                case HttpStatusCode.Created:
+                    return View("Views/Books/Details.cshtml");
+                default:
+                    return ErrorAction("Error. Status code = " + response.StatusCode + "; " + response.ReasonPhrase);
+            }
         }
 
         private ActionResult ErrorAction(string message)
