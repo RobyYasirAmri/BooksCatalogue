@@ -10,7 +10,7 @@ namespace BooksCatalogue.Controllers
 {
     public class ReviewController : Controller
     {
-        private string apiEndpoint = "https://localhost:8000/api/";
+        private string apiEndpoint = "https://catalogroby-api.azurewebsites.net/api/";
         HttpClientHandler clientHandler = new HttpClientHandler();
         private readonly HttpClient _client;
         public ReviewController()
